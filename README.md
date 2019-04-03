@@ -69,11 +69,11 @@
 
 Устанавливаем пакеты **open-iscsi** и **multipath-tools**
 
-    apt-get install open-iscsi multipath-tools
-    systemctl enable iscsid
-    systemctl enable multipathd
-    systemctl start iscsid
-    systemctl start multipathd
+    # apt-get install open-iscsi multipath-tools
+      systemctl enable iscsid
+      systemctl enable multipathd
+      systemctl start iscsid
+      systemctl start multipathd
 
 Применяем настройки сети, можно просто перезагрузить, можно вручную заменить **/etc/network/interfaces** на **/etc/network/interfaces.new** и выключить/включить необходимый интерфейс/бридж.
 
@@ -95,12 +95,20 @@
 
 Проверьте настройки iscsi автостарта нод
 
-     cat /etc/iscsi/iscsid.conf | grep "node.startup = manual"
+    # cat /etc/iscsi/iscsid.conf | grep "node.startup = manual"
+
+Редактируем файл
+
+    # nano /etc/iscsi/iscsid.conf
+
 Автостарт нод при загрузке включается через
+
 > node.startup = automatic
 
-Также здесь можно поменять настройки для работы "multipath" по мануалу производителя:
+Также здесь можно поменять настройки для работы "multipath" по мануалу от производителя:
+
 > node.conn[0].timeo.noop_out_interval = 30
+
 > node.conn[0].timeo.noop_out_timeout = 90
 
 по дефолту стоит значение 5
@@ -179,13 +187,10 @@
 **storage00** - наименование группы томов
 
 Дальше можно перейти в Proxmox и уже там донастраивать если вы будете использовать том только для хранения образов, ну а если на полке места много а виртуалки не такие большие... можно создать на полке логические тома под свои нужды!
-например для бэкапов:
+например для бэкапов и ISO шников:
 
     # lvcreate -n backup -L 1Tp storage00
-
-для ISOшников
-
-    # lvcreate -n ISO -L 1Tp storage00
+      lvcreate -n ISO -L 1Tp storage00
 
 и тд
 -n ISO - задает имя логического тома,
@@ -199,12 +204,12 @@ storage00 - имя группы томов VG
 Теперь можно создать файловую систему на свеженьких LV томах
 
     # mkfs.ext4 /dev/mapper/storage00-backup
-    # mkfs.ext4 /dev/mapper/storage00-ISO
+      mkfs.ext4 /dev/mapper/storage00-ISO
 
 создаем папки для монтирования LV томов
 
     # mkdir /mnt/storage00.backup
-    # mkdir /mnt/storage00.ISO
+      mkdir /mnt/storage00.ISO
 
 добавляем записи монтирования LV томов в
 
@@ -289,5 +294,5 @@ storage00 - имя группы томов VG
 
 И скрестив пальцы на ногах перезагружаем. В случае ошибок пишем в https://t.me/ru_proxmox
 Меня можно найти: https://t.me/SSarge
-
+Если вдруг увидите ошибки и неточности, пишите не стесняйтесь1
 
