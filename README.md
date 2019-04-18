@@ -215,8 +215,8 @@ storage00 - имя группы томов VG
 
     # nano /etc/fstab
 
-    /dev/mapper/storage00-backup /mnt/storage00.backup/ ext4 _netdev,defaults,auto,nofail 0 1
-    /dev/mapper/storage00-ISO /mnt/storage00.ISO/ ext4 _netdev,defaults,auto,nofail 0 1
+    /dev/mapper/storage00-backup /mnt/storage00.backup/ ext4 _netdev,defaults,auto 0 1
+    /dev/mapper/storage00-ISO /mnt/storage00.ISO/ ext4 _netdev,defaults,auto 0 1
 
 параметр **_netdev** говорит о том, что устройство активируется после сетевых драйверов! 
 сохраняем, и монтируем тома 
@@ -294,5 +294,29 @@ storage00 - имя группы томов VG
 
 И скрестив пальцы на ногах перезагружаем. В случае ошибок пишем в https://t.me/ru_proxmox
 Меня можно найти: https://t.me/SSarge
-Если вдруг увидите ошибки и неточности, пишите не стесняйтесь1
+Если вдруг увидите ошибки и неточности, пишите не стесняйтесь!
 
+Столкнулся с тем, что после перезагрузки тома LVM не активны хотя и видны, необходимо активировать группы томов и логических томов
+хотя и в fstab стоит "_netdev", это странно тк такая проблема обычно решается именно этим параметром, в старых версиях iscsi + multipath + lvm встречалось это, в баг треках на RHEL наткнулся на вариант решения:
+
+    You need to enable lvmetad in lvm.conf and make sure that lvm2-lvmetad is running.
+    The lvmetad is the "LVM metadata daemon" that acts an in-memory cache of LVM metadata gathered from devices as they appear in the system - whenever a new block device appears and it has a PV label on it, it's automatically scanned via a udev rule.
+    This updates the lvmetad daemon with the LVM metadata fonud. Once the VG is complete (meaning all the PVs making up the VG are present in the system), the VG is activated.
+    The lvmetad daemon is required for this LVM event-based autoactivation to work.
+
+но он не подходит в моем случае, тк использует кэш вместо сканирования томов, но рекомендуется к включению если большое кол-во LV.
+
+и еще один вариант, добавить в дефолты open-iscsi свою VG, и убедиться, что включена обработка netdev, который я тестирую:
+
+    # grep LVMGROUPS /etc/default/open-iscsi 
+    LVMGROUPS="ваша VGшечка"
+    # grep HANDLE_NETDEV /etc/default/open-iscsi 
+    HANDLE_NETDEV=1
+    
+Собственно костыль который работает:    
+
+    # vgchange -a y
+    # mount -a
+
+
+/tmp /tmp _netdev,0 0
